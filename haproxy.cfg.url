@@ -1,0 +1,70 @@
+global
+   log /dev/log local0
+   log /dev/log local1 notice
+   chroot /var/lib/haproxy
+   stats timeout 30s
+   user haproxy
+   group haproxy
+   daemon
+
+defaults
+   mode http
+   log global
+   option httplog
+   option dontlognull
+   timeout connect 5000
+   timeout client 50000
+   timeout server 50000
+
+###########################
+
+listen stats
+  bind    *:9000
+  mode    http
+  stats   enable
+  stats   hide-version
+  stats   uri /stats
+  stats   refresh   30s
+  stats   realm     Haproxy\ Statistics
+  stats   auth      Admin:Password
+
+###########################
+frontend http
+   bind *:80
+   acl sonarr path_end -i /sonarr
+   acl cp path_end -i /cp
+   acl sabnzb path_end -i /sabnzb
+   
+   use_backend sonarr_url_back if sonarr
+   use_backend cp_url_back if cp
+   use_backend cp_url_back if sabnzb
+   
+###########################
+backend sonarr_url_back
+  balance roundrobin
+  server pi01 10.10.0.147:32402 check
+  server pi02 10.10.0.148:32402 check
+  server pi03 10.10.0.26:32402 check
+  server k8s4 10.10.0.40:32402 check
+  server k8s5 10.10.0.38:32402 check
+  server k8s6 10.10.0.36:32402 check
+  server k8s01 10.10.0.20:32402 check
+  server ubk0 10.10.0.34:32402 check
+  server ubk1 10.10.0.35:32402 check
+  server ubk2 10.10.0.37:32402 check
+  server ubk3 10.10.0.39:32402 check
+###########################  
+backend cp_url_back
+  balance roundrobin
+  server pi01 10.10.0.147:32403 check
+  server pi02 10.10.0.148:32403 check
+  server pi03 10.10.0.26:32403 check
+  server k8s4 10.10.0.40:32403 check
+  server k8s5 10.10.0.38:32403 check
+  server k8s6 10.10.0.36:32403 check
+  server k8s01 10.10.0.20:32403 check
+  server ubk0 10.10.0.34:32403 check
+  server ubk1 10.10.0.35:32403 check
+  server ubk2 10.10.0.37:32403 check
+  server ubk3 10.10.0.39:32403 check
+
